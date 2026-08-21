@@ -343,7 +343,7 @@
        data-logo_alignment="left">
   </div>
   
-  <p class="error-msg" id="login-error">Acceso denegado. Debes usar tu correo institucional @esan.edu.pe</p>
+  <p class="error-msg" id="login-error">Acceso denegado. Debes usar tu correo institucional @ue.edu.pe</p>
 </div>
 
 <!-- CONTENIDO PRINCIPAL (Oculto hasta hacer login) -->
@@ -456,7 +456,7 @@ function parseJwt(token) {
 
 function handleCredentialResponse(response) {
   const data = parseJwt(response.credential);
-  if(data.email.endsWith('@esan.edu.pe')) {
+  if(data.email.endsWith('@ue.edu.pe')) {
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
