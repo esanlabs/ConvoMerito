@@ -443,7 +443,7 @@
 
 <script>
 // ---------- GOOGLE LOGIN LOGIC ----------
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHD2oMM80kEjfx1tuCindmZBOfhYiMoYuZYmp7Rdg8hHYa3dHDkZLjcyrGVXXkPFIa/exec'; // <--- Pega la URL obtenida en el PASO 1
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjrlbKWLiBAfyc3NPw0biSCu3D45611EGGbZ2CIXI36r1l5--6JaklvIj8rBJmIZ31/exec'; // <--- Pega la URL obtenida en el PASO 1
 
 function parseJwt(token) {
   var base64Url = token.split('.')[1];
@@ -491,11 +491,11 @@ async function cargarVacantes() {
 
 // ---------- FORM LOGIC ----------
 const PROJECTS = [
-  { code:'01', id:'esan-news', title:'ESAN News — Micronoticiero Online', sub:'Noticiero semanal para Instagram, videos de ~1 min', vac:'13 vacantes', roles:['Redactor(a)','Camarógrafo(a)','Conductor(a)','Asistente de producción','Editor(a)'] },
-  { code:'02', id:'ai-video', title:'AI Video Creators', sub:'Recursos visuales y video con IA', vac:'3 vacantes', roles:['Editor(a) de Video con IA'] },
-  { code:'03', id:'media-archive', title:'Media Archive & Production Assistant', sub:'Organización del archivo audiovisual', vac:'3 vacantes', roles:['Asistente de archivo y producción'] },
-  { code:'04', id:'photo-crew', title:'Photo Crew', sub:'Cobertura fotográfica de eventos y producciones', vac:'4 vacantes', roles:['Fotógrafo(a)'] },
-  { code:'05', id:'edu-content', title:'Educational Content Crew', sub:'Videos educativos: guion, conducción y edición', vac:'9 vacantes', roles:['Redactor(a) / Guionista','Editor(a) de Video (CapCut)','Conductor(a) de segmento'] }
+  { code:'01', id:'esan-news', title:'ESAN News — Micronoticiero Online', sub:'Noticiero semanal para Instagram, videos de ~1 min', vac: 13, roles:['Redactor(a)','Camarógrafo(a)','Conductor(a)','Asistente de producción','Editor(a)'] },
+  { code:'02', id:'ai-video', title:'AI Video Creators', sub:'Recursos visuales y video con IA', vac: 3, roles:['Editor(a) de Video con IA'] },
+  { code:'03', id:'media-archive', title:'Media Archive & Production Assistant', sub:'Organización del archivo audiovisual', vac: 3, roles:['Asistente de archivo y producción'] },
+  { code:'04', id:'photo-crew', title:'Photo Crew', sub:'Cobertura fotográfica de eventos y producciones', vac: 4, roles:['Fotógrafo(a)'] },
+  { code:'05', id:'edu-content', title:'Educational Content Crew', sub:'Videos educativos: guion, conducción y edición', vac: 9, roles:['Redactor(a) / Guionista','Editor(a) de Video (CapCut)','Conductor(a) de segmento'] }
 ];
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 
