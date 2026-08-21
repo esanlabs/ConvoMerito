@@ -474,18 +474,25 @@ function handleCredentialResponse(response) {
 // NUEVO: La función que hace la magia de actualizar
 async function cargarVacantes() {
   try {
+    console.log("Solicitando datos a Google Sheets...");
     const res = await fetch(SCRIPT_URL);
-    const vacantesReales = await res.json();
+    
+    // Leemos la respuesta como texto primero para ver si Google nos está bloqueando
+    const textoCrudo = await res.text(); 
+    console.log("Respuesta de Google:", textoCrudo);
+    
+    // Convertimos a JSON
+    const vacantesReales = JSON.parse(textoCrudo); 
+    console.log("Vacantes leídas con éxito:", vacantesReales);
     
     PROJECTS.forEach(p => {
-      // Relacionamos por el Título exacto del proyecto
       if(vacantesReales[p.title] !== undefined) {
         p.vac = vacantesReales[p.title]; 
       }
     });
     renderLineup(); 
   } catch(e) {
-    console.error("Error cargando vacantes", e);
+    console.error("Error al cargar vacantes. Detalles:", e);
   }
 }
 
