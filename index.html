@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<!-- Script de Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --ink: #15171C;
@@ -28,6 +30,41 @@
     -webkit-font-smoothing:antialiased;
     min-height:100vh;
   }
+  
+  /* ---------- PANTALLA DE LOGIN ---------- */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    text-align: center;
+  }
+  .login-title {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+  .login-subtitle {
+    color: var(--slate);
+    margin-bottom: 30px;
+    font-size: 15px;
+  }
+  .error-msg {
+    color: var(--on-air);
+    margin-top: 15px;
+    font-weight: bold;
+    display: none;
+    background: rgba(230,57,70,0.1);
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: 1px solid var(--on-air);
+  }
+
+  /* Ocultar contenido de la app al inicio */
+  #app-content { display: none; }
+
   .wrap{max-width:820px;margin:0 auto;padding:0 20px 80px;}
 
   /* ---------- ON AIR HEADER ---------- */
@@ -94,7 +131,7 @@
     margin:0;
   }
 
-  /* ---------- LOWER THIRD (signature element) ---------- */
+  /* ---------- LOWER THIRD ---------- */
   .lower-third{
     margin-top:36px;
     background:var(--ink-2);
@@ -141,7 +178,7 @@
     letter-spacing:0.01em;
   }
 
-  /* ---------- PROJECT CARDS (channel guide) ---------- */
+  /* ---------- PROJECT CARDS ---------- */
   .lineup{display:flex;flex-direction:column;gap:10px;}
   .channel{
     background:var(--ink-2);
@@ -233,6 +270,7 @@
   }
   input[type=text]:focus{border-color:var(--on-air);}
   input[type=text]::placeholder{color:#585F6B;}
+  input[type=text]:disabled{opacity: 0.6; cursor: not-allowed; border-color: var(--line);}
 
   /* ---------- SUMMARY ---------- */
   .summary{
@@ -249,7 +287,6 @@
     white-space:pre-wrap;
     margin:0 0 18px;
   }
-  .summary .miss{color:#585F6B;}
   .actions{display:flex;gap:10px;flex-wrap:wrap;}
   .btn{
     font-family:'Inter',sans-serif;
@@ -262,9 +299,8 @@
     cursor:pointer;
     transition:all .15s ease;
   }
-  .btn.primary{background:var(--on-air);border-color:var(--on-air);}
+  .btn.primary{background:var(--on-air);border-color:var(--on-air); width: 100%; text-align: center; font-size: 15px; padding: 15px;}
   .btn.primary:hover{background:#c92c38;}
-  .btn:hover{border-color:var(--slate);}
   .btn:disabled{opacity:0.35;cursor:not-allowed;}
   .toast{
     font-family:'Roboto Mono',monospace;
@@ -272,6 +308,7 @@
     color:var(--gold);
     margin-top:10px;
     height:14px;
+    text-align: center;
   }
 
   footer{
@@ -280,132 +317,168 @@
     border-top:1px solid var(--line);
     font-size:12px;
     color:var(--slate);
+    text-align: center;
   }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="dot"></div>
-  <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales · 2do Trimestre 2026</span>
+<!-- PANTALLA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-title">Méritos Audiovisuales</div>
+  <div class="login-subtitle">Equipo Audiovisual ESAN Labs</div>
+  
+  <!-- Configuración de Google Login -->
+  <div id="g_id_onload"
+       data-client_id="329913131839-gt27q8hpp3rkev7hl303ekgl1nl1utgu.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse"
+       data-auto_prompt="false">
+  </div>
+  <div class="g_id_signin" 
+       data-type="standard" 
+       data-size="large" 
+       data-theme="outline" 
+       data-text="sign_in_with" 
+       data-shape="rectangular" 
+       data-logo_alignment="left">
+  </div>
+  
+  <p class="error-msg" id="login-error">Acceso denegado. Debes usar tu correo institucional @esan.edu.pe</p>
 </div>
 
-<div class="wrap">
-
-  <div class="hero">
-    <p class="eyebrow">Equipo Audiovisual ESAN</p>
-    <h1>Suma horas de<br><em>mérito</em> ESAN Labs</h1>
-    <p>Agosto y septiembre abren cinco proyectos reales de producción, contenido digital, fotografía, video e IA. Completa este formulario para postular — al final generamos el mensaje listo para enviar por interno.</p>
-
-    <div class="lower-third">
-      <div class="lt-name" id="ltName">TU NOMBRE APARECERÁ AQUÍ</div>
-      <div class="lt-role" id="ltRole">SELECCIONA UN PROYECTO Y UNA FUNCIÓN</div>
-      <div class="lt-hint">Así se vería tu placa si estuvieras al aire hoy.</div>
-    </div>
+<!-- CONTENIDO PRINCIPAL (Oculto hasta hacer login) -->
+<div id="app-content">
+  <div class="topbar">
+    <div class="dot"></div>
+    <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales · 2do Trimestre 2026</span>
   </div>
 
-  <!-- SECTION 1: PROJECT -->
-  <div class="section">
-    <div class="sec-head">
-      <span class="sec-num">01</span>
-      <span class="sec-title">Elige tu proyecto</span>
-    </div>
-    <div class="lineup" id="lineup"></div>
+  <div class="wrap">
+    <div class="hero">
+      <p class="eyebrow">Equipo Audiovisual ESAN</p>
+      <h1>Suma horas de<br><em>mérito</em> ESAN Labs</h1>
+      <p>Agosto y septiembre abren cinco proyectos reales de producción. Completa este formulario para postular.</p>
 
-    <div class="chip-field">
-      <span class="chip-label">Función o puesto</span>
-      <div class="chips" id="roleChips"></div>
-      <p class="empty-note" id="roleEmpty">Selecciona primero un proyecto.</p>
+      <div class="lower-third">
+        <div class="lt-name" id="ltName">TU NOMBRE APARECERÁ AQUÍ</div>
+        <div class="lt-role" id="ltRole">SELECCIONA UN PROYECTO Y UNA FUNCIÓN</div>
+        <div class="lt-hint">Así se vería tu placa si estuvieras al aire hoy.</div>
+      </div>
     </div>
+
+    <!-- SECTION 1: PROJECT -->
+    <div class="section">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <span class="sec-title">Elige tu proyecto</span>
+      </div>
+      <div class="lineup" id="lineup"></div>
+
+      <div class="chip-field">
+        <span class="chip-label">Función o puesto</span>
+        <div class="chips" id="roleChips"></div>
+        <p class="empty-note" id="roleEmpty">Selecciona primero un proyecto.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 2: AVAILABILITY -->
+    <div class="section">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <span class="sec-title">Disponibilidad</span>
+      </div>
+      <span class="chip-label">Días (agosto y septiembre, turno fijo)</span>
+      <div class="chips" id="dayChips" style="margin-bottom:20px;"></div>
+
+      <div class="field" style="max-width:320px;">
+        <label class="f-label" for="turno">Turno (rango de horas, 9:00 a.m. a 9:00 p.m.)</label>
+        <input type="text" id="turno" placeholder="Ej. 9:00 a.m. – 1:00 p.m.">
+      </div>
+    </div>
+
+    <!-- SECTION 3: DATA -->
+    <div class="section">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <span class="sec-title">Tus datos</span>
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label class="f-label" for="nombre">Nombre completo (Automático)</label>
+          <input type="text" id="nombre" disabled>
+        </div>
+        <div class="field">
+          <label class="f-label" for="correo">Correo (Automático)</label>
+          <input type="text" id="correo" disabled>
+        </div>
+        <div class="field">
+          <label class="f-label" for="carrera">Carrera</label>
+          <input type="text" id="carrera" placeholder="Ej. Comunicaciones">
+        </div>
+        <div class="field">
+          <label class="f-label" for="codigo">Código de alumno</label>
+          <input type="text" id="codigo" placeholder="Ej. 20231234">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: SUMMARY & SUBMIT -->
+    <div class="section">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <span class="sec-title">Revisar y Enviar</span>
+      </div>
+      <div class="summary">
+        <pre id="summaryText"></pre>
+        <div class="actions">
+          <button class="btn primary" id="submitBtn" disabled>Enviar Postulación</button>
+        </div>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+
+    <footer>Equipo Audiovisual ESAN · Convocatoria Méritos Audiovisuales · 2do Trimestre 2026</footer>
   </div>
-
-  <!-- SECTION 2: AVAILABILITY -->
-  <div class="section">
-    <div class="sec-head">
-      <span class="sec-num">02</span>
-      <span class="sec-title">Disponibilidad</span>
-    </div>
-    <span class="chip-label">Días (agosto y septiembre, turno fijo)</span>
-    <div class="chips" id="dayChips" style="margin-bottom:20px;"></div>
-
-    <div class="field" style="max-width:320px;">
-      <label class="f-label" for="turno">Turno (rango de horas, entre 9:00 a.m. y 9:00 p.m.)</label>
-      <input type="text" id="turno" placeholder="Ej. 9:00 a.m. – 1:00 p.m.">
-    </div>
-  </div>
-
-  <!-- SECTION 3: DATA -->
-  <div class="section">
-    <div class="sec-head">
-      <span class="sec-num">03</span>
-      <span class="sec-title">Tus datos</span>
-    </div>
-    <div class="grid">
-      <div class="field">
-        <label class="f-label" for="nombre">Nombre completo</label>
-        <input type="text" id="nombre" placeholder="Ej. María Fernanda Rojas Vega">
-      </div>
-      <div class="field">
-        <label class="f-label" for="carrera">Carrera</label>
-        <input type="text" id="carrera" placeholder="Ej. Comunicaciones">
-      </div>
-      <div class="field">
-        <label class="f-label" for="codigo">Código de alumno</label>
-        <input type="text" id="codigo" placeholder="Ej. 20231234">
-      </div>
-      <div class="field">
-        <label class="f-label" for="correo">Correo (opcional, para el botón de enviar)</label>
-        <input type="text" id="correo" placeholder="nombre@esan.edu.pe">
-      </div>
-    </div>
-  </div>
-
-  <!-- SECTION 4: SUMMARY -->
-  <div class="section">
-    <div class="sec-head">
-      <span class="sec-num">04</span>
-      <span class="sec-title">Mensaje para enviar</span>
-    </div>
-    <div class="summary">
-      <pre id="summaryText"></pre>
-      <div class="actions">
-        <button class="btn primary" id="copyBtn">Copiar mensaje</button>
-        <button class="btn" id="mailBtn">Abrir en correo</button>
-      </div>
-      <div class="toast" id="toast"></div>
-    </div>
-  </div>
-
-  <footer>Equipo Audiovisual ESAN · Convocatoria Méritos Audiovisuales · 2do Trimestre 2026</footer>
 </div>
 
 <script>
-const PROJECTS = [
-  {
-    code:'01', id:'esan-news', title:'ESAN News — Micronoticiero Online',
-    sub:'Noticiero semanal para Instagram, videos de ~1 min', vac:'13 vacantes',
-    roles:['Redactor(a)','Camarógrafo(a)','Conductor(a)','Asistente de producción','Editor(a)']
-  },
-  {
-    code:'02', id:'ai-video', title:'AI Video Creators',
-    sub:'Recursos visuales y video con inteligencia artificial', vac:'3 vacantes',
-    roles:['Editor(a) de Video con IA']
-  },
-  {
-    code:'03', id:'media-archive', title:'Media Archive & Production Assistant',
-    sub:'Organización del archivo audiovisual del área', vac:'3 vacantes',
-    roles:['Asistente de archivo y producción']
-  },
-  {
-    code:'04', id:'photo-crew', title:'Photo Crew',
-    sub:'Cobertura fotográfica de eventos y producciones', vac:'4 vacantes',
-    roles:['Fotógrafo(a)']
-  },
-  {
-    code:'05', id:'edu-content', title:'Educational Content Crew',
-    sub:'Videos educativos: guion, conducción y edición', vac:'9 vacantes',
-    roles:['Redactor(a) / Guionista','Editor(a) de Video (CapCut)','Conductor(a) de segmento']
+// ---------- GOOGLE LOGIN LOGIC ----------
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwHD2oMM80kEjfx1tuCindmZBOfhYiMoYuZYmp7Rdg8hHYa3dHDkZLjcyrGVXXkPFIa/exec'; // <--- Pega la URL obtenida en el PASO 1
+
+function parseJwt(token) {
+  var base64Url = token.split('.')[1];
+  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
+}
+
+function handleCredentialResponse(response) {
+  const data = parseJwt(response.credential);
+  
+  // Validar que sea de ESAN
+  if(data.email.endsWith('@esan.edu.pe')) {
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    
+    // Autocompletar datos del usuario
+    document.getElementById('nombre').value = data.name;
+    document.getElementById('correo').value = data.email;
+    update();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
   }
+}
+
+// ---------- FORM LOGIC ----------
+const PROJECTS = [
+  { code:'01', id:'esan-news', title:'ESAN News — Micronoticiero Online', sub:'Noticiero semanal para Instagram, videos de ~1 min', vac:'13 vacantes', roles:['Redactor(a)','Camarógrafo(a)','Conductor(a)','Asistente de producción','Editor(a)'] },
+  { code:'02', id:'ai-video', title:'AI Video Creators', sub:'Recursos visuales y video con IA', vac:'3 vacantes', roles:['Editor(a) de Video con IA'] },
+  { code:'03', id:'media-archive', title:'Media Archive & Production Assistant', sub:'Organización del archivo audiovisual', vac:'3 vacantes', roles:['Asistente de archivo y producción'] },
+  { code:'04', id:'photo-crew', title:'Photo Crew', sub:'Cobertura fotográfica de eventos y producciones', vac:'4 vacantes', roles:['Fotógrafo(a)'] },
+  { code:'05', id:'edu-content', title:'Educational Content Crew', sub:'Videos educativos: guion, conducción y edición', vac:'9 vacantes', roles:['Redactor(a) / Guionista','Editor(a) de Video (CapCut)','Conductor(a) de segmento'] }
 ];
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 
@@ -473,60 +546,82 @@ function renderDays(){
 const nombreEl = document.getElementById('nombre');
 const carreraEl = document.getElementById('carrera');
 const codigoEl = document.getElementById('codigo');
-const correoEl = document.getElementById('correo');
 const turnoEl = document.getElementById('turno');
-[nombreEl, carreraEl, codigoEl, correoEl, turnoEl].forEach(el=> el.addEventListener('input', update));
+[carreraEl, codigoEl, turnoEl].forEach(el=> el.addEventListener('input', update));
 
-function update(){
-  const p = PROJECTS.find(x=>x.id===state.project);
-  const nombre = nombreEl.value.trim();
-
-  document.getElementById('ltName').textContent = nombre ? nombre.toUpperCase() : 'TU NOMBRE APARECERÁ AQUÍ';
-  document.getElementById('ltRole').textContent = (p && state.role) ? `${state.role.toUpperCase()} · ${p.title.toUpperCase()}` : 'SELECCIONA UN PROYECTO Y UNA FUNCIÓN';
-
+function getDispoStr() {
   const turnoVal = turnoEl.value.trim();
   const dispo = [];
   if(state.days.length) dispo.push(state.days.join(', '));
   if(turnoVal) dispo.push(turnoVal);
-  const dispoStr = dispo.join(' — ');
+  return dispo.join(' — ');
+}
+
+function update(){
+  const p = PROJECTS.find(x=>x.id===state.project);
+  const nombre = nombreEl.value.trim();
+  const dispoStr = getDispoStr();
+
+  document.getElementById('ltName').textContent = nombre ? nombre.toUpperCase() : 'TU NOMBRE APARECERÁ AQUÍ';
+  document.getElementById('ltRole').textContent = (p && state.role) ? `${state.role.toUpperCase()} · ${p.title.toUpperCase()}` : 'SELECCIONA UN PROYECTO Y UNA FUNCIÓN';
 
   const lines = [
-    `Nombre completo: ${nombre || '—'}`,
+    `Nombre: ${nombre || '—'}`,
     `Carrera: ${carreraEl.value.trim() || '—'}`,
-    `Código de alumno: ${codigoEl.value.trim() || '—'}`,
+    `Código: ${codigoEl.value.trim() || '—'}`,
     `Proyecto: ${p ? p.title : '—'}`,
     `Función: ${state.role || '—'}`,
-    `Disponibilidad: ${dispoStr || '—'}`,
+    `Disponibilidad: ${dispoStr || '—'}`
   ];
   document.getElementById('summaryText').textContent = lines.join('\n');
 
+  // Habilitar botón solo si todo está completo
   const complete = nombre && carreraEl.value.trim() && codigoEl.value.trim() && p && state.role && dispoStr;
-  document.getElementById('copyBtn').disabled = !complete;
-  document.getElementById('mailBtn').disabled = !complete;
+  document.getElementById('submitBtn').disabled = !complete;
 }
 
-document.getElementById('copyBtn').addEventListener('click', async ()=>{
-  const text = document.getElementById('summaryText').textContent;
-  try{
-    await navigator.clipboard.writeText(text);
-    showToast('Mensaje copiado ✓');
-  }catch(e){
-    showToast('No se pudo copiar automáticamente — selecciona el texto manualmente.');
-  }
-});
+// ---------- SUBMIT LOGIC TO GOOGLE SHEETS ----------
+document.getElementById('submitBtn').addEventListener('click', async ()=>{
+  const p = PROJECTS.find(x=>x.id===state.project);
+  const btn = document.getElementById('submitBtn');
+  
+  // Armar el payload JSON
+  const payload = {
+    nombre: document.getElementById('nombre').value.trim(),
+    carrera: document.getElementById('carrera').value.trim(),
+    codigo: document.getElementById('codigo').value.trim(),
+    proyecto: p.title,
+    funcion: state.role,
+    disponibilidad: getDispoStr()
+  };
 
-document.getElementById('mailBtn').addEventListener('click', ()=>{
-  const text = document.getElementById('summaryText').textContent;
-  const to = correoEl.value.trim();
-  const subject = encodeURIComponent('Postulación — Convocatoria Méritos Audiovisuales');
-  const body = encodeURIComponent(text);
-  window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  try {
+    // Usamos 'text/plain' para evitar problemas de CORS de Google Scripts
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    showToast('¡Postulación enviada a la base de datos con éxito!');
+    btn.textContent = 'Enviado ✓';
+    // Opcional: limpiar form aquí
+  } catch(e) {
+    showToast('Hubo un error al enviar. Por favor intenta de nuevo.');
+    btn.textContent = 'Enviar Postulación';
+    btn.disabled = false;
+  }
 });
 
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
-  setTimeout(()=>{ if(t.textContent===msg) t.textContent=''; }, 3500);
+  setTimeout(()=>{ if(t.textContent===msg) t.textContent=''; }, 4000);
 }
 
 renderLineup();
@@ -534,6 +629,5 @@ renderRoles();
 renderDays();
 update();
 </script>
-
 </body>
 </html>
