@@ -443,7 +443,7 @@
 
 <script>
 // ---------- GOOGLE LOGIN LOGIC ----------
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjrlbKWLiBAfyc3NPw0biSCu3D45611EGGbZ2CIXI36r1l5--6JaklvIj8rBJmIZ31/exec'; // <--- Pega la URL obtenida en el PASO 1
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjrlbKWLiBAfyc3NPw0biSCu3D45611EGGbZ2CIXI36r1l5--6JaklvIj8rBJmIZ31/exec'; // Tu URL actual
 
 function parseJwt(token) {
   var base64Url = token.split('.')[1];
@@ -464,46 +464,16 @@ function handleCredentialResponse(response) {
     document.getElementById('nombre').value = data.name;
     document.getElementById('correo').value = data.email;
     
-    // NUEVO: Pide a Google Sheets las vacantes reales
+    // Pedimos a Google Sheets toda la info (Proyectos, vacantes, roles y fechas)
     cargarVacantes(); 
   } else {
     document.getElementById('login-error').style.display = 'block';
   }
 }
 
-// NUEVO: La función que hace la magia de actualizar
-async function cargarVacantes() {
-  try {
-    console.log("Solicitando datos a Google Sheets...");
-    const res = await fetch(SCRIPT_URL);
-    
-    // Leemos la respuesta como texto primero para ver si Google nos está bloqueando
-    const textoCrudo = await res.text(); 
-    console.log("Respuesta de Google:", textoCrudo);
-    
-    // Convertimos a JSON
-    const vacantesReales = JSON.parse(textoCrudo); 
-    console.log("Vacantes leídas con éxito:", vacantesReales);
-    
-    PROJECTS.forEach(p => {
-      if(vacantesReales[p.title] !== undefined) {
-        p.vac = vacantesReales[p.title]; 
-      }
-    });
-    renderLineup(); 
-  } catch(e) {
-    console.error("Error al cargar vacantes. Detalles:", e);
-  }
-}
-
 // ---------- FORM LOGIC ----------
-const PROJECTS = [
-  { code:'01', id:'esan-news', title:'ESAN News — Micronoticiero Online', sub:'Noticiero semanal para Instagram, videos de ~1 min', vac: 13, roles:['Redactor(a)','Camarógrafo(a)','Conductor(a)','Asistente de producción','Editor(a)'] },
-  { code:'02', id:'ai-video', title:'AI Video Creators', sub:'Recursos visuales y video con IA', vac: 3, roles:['Editor(a) de Video con IA'] },
-  { code:'03', id:'media-archive', title:'Media Archive & Production Assistant', sub:'Organización del archivo audiovisual', vac: 3, roles:['Asistente de archivo y producción'] },
-  { code:'04', id:'photo-crew', title:'Photo Crew', sub:'Cobertura fotográfica de eventos y producciones', vac: 4, roles:['Fotógrafo(a)'] },
-  { code:'05', id:'edu-content', title:'Educational Content Crew', sub:'Videos educativos: guion, conducción y edición', vac: 9, roles:['Redactor(a) / Guionista','Editor(a) de Video (CapCut)','Conductor(a) de segmento'] }
-];
+// Ya no usamos una lista estática, empieza vacía y se llena sola desde el Excel
+let PROJECTS = []; 
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 
 let state = { project:null, role:null, days:[] };
@@ -513,33 +483,53 @@ const roleChipsEl = document.getElementById('roleChips');
 const roleEmptyEl = document.getElementById('roleEmpty');
 const dayChipsEl = document.getElementById('dayChips');
 
+async function cargarVacantes() {
+  try {
+    console.log("Solicitando datos a Google Sheets...");
+    const res = await fetch(SCRIPT_URL);
+    const textoCrudo = await res.text(); 
+    
+    // El Excel nos envía el paquete completo, lo guardamos en PROJECTS
+    PROJECTS = JSON.parse(textoCrudo); 
+    
+    // Si no hay proyectos activos en esta fecha, mostramos un mensaje
+    if(PROJECTS.length === 0) {
+      lineupEl.innerHTML = '<p style="color:var(--slate); font-size:14px;">No hay convocatorias activas en este momento.</p>';
+      return;
+    }
+    
+    renderLineup(); 
+  } catch(e) {
+    console.error("Error al cargar vacantes. Detalles:", e);
+  }
+}
+
 function renderLineup(){
   lineupEl.innerHTML = '';
   PROJECTS.forEach(p=>{
     const div = document.createElement('div');
-    // Revisamos si quedan 0 vacantes
     const agotado = (typeof p.vac === 'number' ? p.vac : parseInt(p.vac)) <= 0; 
 
-    // Si está agotado, le aplicamos CSS para que se vea bloqueado
     div.className = 'channel' + (state.project===p.id ? ' active' : '');
     if (agotado) {
       div.style.opacity = '0.4';
-      div.style.pointerEvents = 'none'; // Evita el clic
+      div.style.pointerEvents = 'none'; 
       div.style.filter = 'grayscale(1)';
     }
 
+    // Hemos añadido una línea extra para mostrar la fecha límite visualmente
     div.innerHTML = `
       <span class="ch-code">${p.code}</span>
       <div class="ch-body">
         <p class="ch-title">${p.title}</p>
         <p class="ch-sub">${p.sub}</p>
+        ${p.fechaLimite ? `<p class="ch-sub" style="color:var(--gold); font-size:11px; margin-top:4px;">Cierra: ${p.fechaLimite}</p>` : ''}
       </div>
       <span class="ch-vac" style="${agotado ? 'color:var(--on-air); font-weight:bold;' : ''}">
         ${agotado ? 'AGOTADO' : p.vac + ' vacantes'}
       </span>
     `;
     
-    // Solo le agregamos el evento de clic si NO está agotado
     if (!agotado) {
       div.addEventListener('click', ()=>{
         state.project = p.id;
@@ -558,13 +548,19 @@ function renderRoles(){
   const p = PROJECTS.find(x=>x.id===state.project);
   if(!p){ roleEmptyEl.style.display='block'; return; }
   roleEmptyEl.style.display='none';
-  p.roles.forEach(r=>{
-    const btn = document.createElement('button');
-    btn.className = 'chip' + (state.role===r ? ' active' : '');
-    btn.textContent = r;
-    btn.addEventListener('click', ()=>{ state.role = r; renderRoles(); update(); });
-    roleChipsEl.appendChild(btn);
-  });
+  
+  if(p.roles && p.roles.length > 0) {
+    p.roles.forEach(r=>{
+      const btn = document.createElement('button');
+      btn.className = 'chip' + (state.role===r ? ' active' : '');
+      btn.textContent = r;
+      btn.addEventListener('click', ()=>{ state.role = r; renderRoles(); update(); });
+      roleChipsEl.appendChild(btn);
+    });
+  } else {
+    roleEmptyEl.textContent = 'No hay funciones específicas configuradas.';
+    roleEmptyEl.style.display='block';
+  }
 }
 
 function renderDays(){
@@ -615,7 +611,6 @@ function update(){
   ];
   document.getElementById('summaryText').textContent = lines.join('\n');
 
-  // Habilitar botón solo si todo está completo
   const complete = nombre && carreraEl.value.trim() && codigoEl.value.trim() && p && state.role && dispoStr;
   document.getElementById('submitBtn').disabled = !complete;
 }
@@ -625,7 +620,6 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const p = PROJECTS.find(x=>x.id===state.project);
   const btn = document.getElementById('submitBtn');
   
-  // Armar el payload JSON
   const payload = {
     nombre: document.getElementById('nombre').value.trim(),
     carrera: document.getElementById('carrera').value.trim(),
@@ -639,7 +633,6 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   btn.disabled = true;
 
   try {
-    // Usamos 'text/plain' para evitar problemas de CORS de Google Scripts
     await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: {
@@ -650,7 +643,6 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
     
     showToast('¡Postulación enviada a la base de datos con éxito!');
     btn.textContent = 'Enviado ✓';
-    // Opcional: limpiar form aquí
   } catch(e) {
     showToast('Hubo un error al enviar. Por favor intenta de nuevo.');
     btn.textContent = 'Enviar Postulación';
@@ -664,6 +656,7 @@ function showToast(msg){
   setTimeout(()=>{ if(t.textContent===msg) t.textContent=''; }, 4000);
 }
 
+// Renderizamos la UI base mientras se fuerza el login (que luego cargará los proyectos)
 renderLineup();
 renderRoles();
 renderDays();
