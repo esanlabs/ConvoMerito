@@ -179,7 +179,14 @@ const turnoEl = document.getElementById('turno');
 [carreraEl, codigoEl, turnoEl].forEach(el => el.addEventListener('input', updateSummary));
 
 function getDispoStr() {
-  if (state.tipo !== 'Permanente') return 'N/A (Evento)';
+  const p = PROJECTS.find(x => x.id === state.project);
+
+  // Si es evento, usamos la fecha del evento seleccionado
+  if (state.tipo === 'Evento') {
+    return p && p.fechaLimite ? `Día del evento: ${p.fechaLimite}` : 'Selecciona un evento';
+  }
+
+  // Si es permanente, mantiene la lógica de días y turnos
   const turnoVal = turnoEl.value.trim();
   const dispo = [];
   if(state.days.length) dispo.push(state.days.join(', '));
