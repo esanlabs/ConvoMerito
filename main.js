@@ -1,5 +1,5 @@
 // ---------- GOOGLE LOGIN LOGIC ----------
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjrlbKWLiBAfyc3NPw0biSCu3D45611EGGbZ2CIXI36r1l5--6JaklvIj8rBJmIZ31/exec'; // Tu URL actual
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjrlbKWLiBAfyc3NPw0biSCu3D45611EGGbZ2CIXI36r1l5--6JaklvIj8rBJmIZ31/exec';
 
 function parseJwt(token) {
   var base64Url = token.split('.')[1];
@@ -19,8 +19,6 @@ function handleCredentialResponse(response) {
     
     document.getElementById('nombre').value = data.name;
     document.getElementById('correo').value = data.email;
-    
-    // Pedimos a Google Sheets toda la info (Proyectos, vacantes, roles y fechas)
     cargarVacantes(); 
   } else {
     document.getElementById('login-error').style.display = 'block';
@@ -28,58 +26,119 @@ function handleCredentialResponse(response) {
 }
 
 // ---------- FORM LOGIC ----------
-// Ya no usamos una lista estática, empieza vacía y se llena sola desde el Excel
 let PROJECTS = []; 
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 
-let state = { project:null, role:null, days:[] };
+// Añadimos 'tipo' al estado global
+let state = { tipo: null, project: null, role: null, days: [] };
 
 const lineupEl = document.getElementById('lineup');
-const roleChipsEl = document.getElementById('roleChips');
-const roleEmptyEl = document.getElementById('roleEmpty');
+const rolesPermEl = document.getElementById('rolesPermanentes');
+const rolesEvtEl = document.getElementById('rolesEvento');
 const dayChipsEl = document.getElementById('dayChips');
 
 async function cargarVacantes() {
   try {
-    console.log("Solicitando datos a Google Sheets...");
     const res = await fetch(SCRIPT_URL);
-    const textoCrudo = await res.text(); 
-    
-    // El Excel nos envía el paquete completo, lo guardamos en PROJECTS
-    PROJECTS = JSON.parse(textoCrudo); 
-    
-    // Si no hay proyectos activos en esta fecha, mostramos un mensaje
-    if(PROJECTS.length === 0) {
-      lineupEl.innerHTML = '<p style="color:var(--slate); font-size:14px;">No hay convocatorias activas en este momento.</p>';
-      return;
-    }
-    
-    renderLineup(); 
+    PROJECTS = JSON.parse(await res.text()); 
+    updateUI();
   } catch(e) {
-    console.error("Error al cargar vacantes. Detalles:", e);
+    console.error("Error:", e);
   }
+}
+
+// Control maestro de visualización
+function updateUI() {
+  renderRoles();
+  
+  const secProyecto = document.getElementById('sec-proyecto');
+  const secDispo = document.getElementById('sec-disponibilidad');
+
+  if (state.tipo === 'Permanente') {
+    secProyecto.style.display = 'none';
+    secDispo.style.display = 'block';
+  } else if (state.tipo === 'Evento') {
+    secProyecto.style.display = 'block';
+    secDispo.style.display = 'none';
+    renderLineup(); 
+  } else {
+    secProyecto.style.display = 'none';
+    secDispo.style.display = 'none';
+  }
+  
+  updateSummary();
+}
+
+function renderRoles() {
+  rolesPermEl.innerHTML = '';
+  rolesEvtEl.innerHTML = '';
+
+  const pPerm = PROJECTS.filter(p => p.tipo.toLowerCase() === 'permanente');
+  const pEvt = PROJECTS.filter(p => p.tipo.toLowerCase() !== 'permanente');
+
+  const rolesPerm = [...new Set(pPerm.flatMap(p => p.roles))];
+  const rolesEvt = [...new Set(pEvt.flatMap(p => p.roles))];
+
+  document.getElementById('permEmpty').style.display = rolesPerm.length ? 'none' : 'block';
+  document.getElementById('evtEmpty').style.display = rolesEvt.length ? 'none' : 'block';
+
+  rolesPerm.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (state.role === r && state.tipo === 'Permanente' ? ' active' : '');
+    btn.textContent = r;
+    btn.addEventListener('click', () => {
+      state.tipo = 'Permanente';
+      state.role = r;
+      // Asignamos directamente el proyecto permanente asociado al rol
+      const proj = pPerm.find(x => x.roles.includes(r));
+      state.project = proj ? proj.id : null;
+      updateUI();
+    });
+    rolesPermEl.appendChild(btn);
+  });
+
+  rolesEvt.forEach(r => {
+    const btn = document.createElement('button');
+    btn.className = 'chip' + (state.role === r && state.tipo === 'Evento' ? ' active' : '');
+    btn.textContent = r;
+    btn.addEventListener('click', () => {
+      // Si cambia de rol, reseteamos el proyecto seleccionado
+      if (state.role !== r) state.project = null; 
+      state.tipo = 'Evento';
+      state.role = r;
+      updateUI();
+    });
+    rolesEvtEl.appendChild(btn);
+  });
 }
 
 function renderLineup(){
   lineupEl.innerHTML = '';
-  PROJECTS.forEach(p=>{
+  // Filtramos solo los eventos que soliciten el rol seleccionado
+  const eventosFiltrados = PROJECTS.filter(p => p.tipo.toLowerCase() !== 'permanente' && p.roles.includes(state.role));
+  
+  if(eventosFiltrados.length === 0){
+    lineupEl.innerHTML = '<p class="empty-note">No hay eventos activos para esta función en este momento.</p>';
+    return;
+  }
+
+  eventosFiltrados.forEach(p => {
     const div = document.createElement('div');
     const agotado = (typeof p.vac === 'number' ? p.vac : parseInt(p.vac)) <= 0; 
 
-    div.className = 'channel' + (state.project===p.id ? ' active' : '');
+    div.className = 'channel' + (state.project === p.id ? ' active' : '');
     if (agotado) {
       div.style.opacity = '0.4';
       div.style.pointerEvents = 'none'; 
       div.style.filter = 'grayscale(1)';
     }
 
-    // Hemos añadido una línea extra para mostrar la fecha límite visualmente
     div.innerHTML = `
       <span class="ch-code">${p.code}</span>
       <div class="ch-body">
         <p class="ch-title">${p.title}</p>
         <p class="ch-sub">${p.sub}</p>
-        ${p.fechaLimite ? `<p class="ch-sub" style="color:var(--gold); font-size:11px; margin-top:4px;">Cierra: ${p.fechaLimite}</p>` : ''}
+        <p class="ch-sub" style="color:var(--gold); font-size:11px; margin-top:4px;">Fecha del evento: ${p.fechaLimite}</p>
       </div>
       <span class="ch-vac" style="${agotado ? 'color:var(--on-air); font-weight:bold;' : ''}">
         ${agotado ? 'AGOTADO' : p.vac + ' vacantes'}
@@ -87,49 +146,27 @@ function renderLineup(){
     `;
     
     if (!agotado) {
-      div.addEventListener('click', ()=>{
+      div.addEventListener('click', () => {
         state.project = p.id;
-        state.role = null;
         renderLineup();
-        renderRoles();
-        update();
+        updateSummary();
       });
     }
     lineupEl.appendChild(div);
   });
 }
 
-function renderRoles(){
-  roleChipsEl.innerHTML = '';
-  const p = PROJECTS.find(x=>x.id===state.project);
-  if(!p){ roleEmptyEl.style.display='block'; return; }
-  roleEmptyEl.style.display='none';
-  
-  if(p.roles && p.roles.length > 0) {
-    p.roles.forEach(r=>{
-      const btn = document.createElement('button');
-      btn.className = 'chip' + (state.role===r ? ' active' : '');
-      btn.textContent = r;
-      btn.addEventListener('click', ()=>{ state.role = r; renderRoles(); update(); });
-      roleChipsEl.appendChild(btn);
-    });
-  } else {
-    roleEmptyEl.textContent = 'No hay funciones específicas configuradas.';
-    roleEmptyEl.style.display='block';
-  }
-}
-
 function renderDays(){
   dayChipsEl.innerHTML = '';
-  DAYS.forEach(d=>{
+  DAYS.forEach(d => {
     const btn = document.createElement('button');
     btn.className = 'chip day' + (state.days.includes(d) ? ' active' : '');
     btn.textContent = d;
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click', () => {
       if(state.days.includes(d)) state.days = state.days.filter(x=>x!==d);
       else state.days.push(d);
       renderDays();
-      update();
+      updateSummary();
     });
     dayChipsEl.appendChild(btn);
   });
@@ -139,9 +176,10 @@ const nombreEl = document.getElementById('nombre');
 const carreraEl = document.getElementById('carrera');
 const codigoEl = document.getElementById('codigo');
 const turnoEl = document.getElementById('turno');
-[carreraEl, codigoEl, turnoEl].forEach(el=> el.addEventListener('input', update));
+[carreraEl, codigoEl, turnoEl].forEach(el => el.addEventListener('input', updateSummary));
 
 function getDispoStr() {
+  if (state.tipo !== 'Permanente') return 'N/A (Evento)';
   const turnoVal = turnoEl.value.trim();
   const dispo = [];
   if(state.days.length) dispo.push(state.days.join(', '));
@@ -149,14 +187,23 @@ function getDispoStr() {
   return dispo.join(' — ');
 }
 
-function update(){
-  const p = PROJECTS.find(x=>x.id===state.project);
+function updateSummary(){
+  const p = PROJECTS.find(x => x.id === state.project);
   const nombre = nombreEl.value.trim();
   const dispoStr = getDispoStr();
 
+  // Actualiza la placa en vivo
   document.getElementById('ltName').textContent = nombre ? nombre.toUpperCase() : 'TU NOMBRE APARECERÁ AQUÍ';
-  document.getElementById('ltRole').textContent = (p && state.role) ? `${state.role.toUpperCase()} · ${p.title.toUpperCase()}` : 'SELECCIONA UN PROYECTO Y UNA FUNCIÓN';
+  
+  if (state.tipo === 'Permanente' && p && state.role) {
+    document.getElementById('ltRole').textContent = `${state.role.toUpperCase()} (PERMANENTE)`;
+  } else if (state.tipo === 'Evento' && p && state.role) {
+    document.getElementById('ltRole').textContent = `${state.role.toUpperCase()} · ${p.title.toUpperCase()}`;
+  } else {
+    document.getElementById('ltRole').textContent = 'SELECCIONA UNA MODALIDAD Y FUNCIÓN';
+  }
 
+  // Texto resumen
   const lines = [
     `Nombre: ${nombre || '—'}`,
     `Carrera: ${carreraEl.value.trim() || '—'}`,
@@ -165,15 +212,22 @@ function update(){
     `Función: ${state.role || '—'}`,
     `Disponibilidad: ${dispoStr || '—'}`
   ];
+  if (state.tipo === 'Permanente' && p) {
+    lines.push(`Cierre de inscripción: ${p.fechaLimite}`);
+  }
   document.getElementById('summaryText').textContent = lines.join('\n');
 
-  const complete = nombre && carreraEl.value.trim() && codigoEl.value.trim() && p && state.role && dispoStr;
+  // Lógica de validación para habilitar el botón
+  let complete = nombre && carreraEl.value.trim() && codigoEl.value.trim() && state.role && p;
+  if (state.tipo === 'Permanente') {
+    complete = complete && (state.days.length > 0 || turnoEl.value.trim() !== '');
+  }
   document.getElementById('submitBtn').disabled = !complete;
 }
 
 // ---------- SUBMIT LOGIC TO GOOGLE SHEETS ----------
-document.getElementById('submitBtn').addEventListener('click', async ()=>{
-  const p = PROJECTS.find(x=>x.id===state.project);
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const p = PROJECTS.find(x => x.id === state.project);
   const btn = document.getElementById('submitBtn');
   
   const payload = {
@@ -191,9 +245,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   try {
     await fetch(SCRIPT_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
     
@@ -209,11 +261,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
-  setTimeout(()=>{ if(t.textContent===msg) t.textContent=''; }, 4000);
+  setTimeout(() => { if(t.textContent === msg) t.textContent = ''; }, 4000);
 }
 
-// Renderizamos la UI base mientras se fuerza el login (que luego cargará los proyectos)
-renderLineup();
-renderRoles();
 renderDays();
-update();
