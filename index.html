@@ -7,11 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-<!-- Enlace a tu nuevo archivo de estilos -->
 <link rel="stylesheet" href="style.css">
-
-<!-- Script de Google Identity Services -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -20,102 +16,86 @@
 <div id="login-screen">
   <div class="login-title">Méritos Audiovisuales</div>
   <div class="login-subtitle">Equipo Audiovisual ESAN Labs</div>
-  
-  <!-- Configuración de Google Login -->
-  <div id="g_id_onload"
-       data-client_id="329913131839-gt27q8hpp3rkev7hl303ekgl1nl1utgu.apps.googleusercontent.com"
-       data-callback="handleCredentialResponse"
-       data-auto_prompt="false">
-  </div>
-  <div class="g_id_signin" 
-       data-type="standard" 
-       data-size="large" 
-       data-theme="outline" 
-       data-text="sign_in_with" 
-       data-shape="rectangular" 
-       data-logo_alignment="left">
-  </div>
-  
-  <p class="error-msg" id="login-error">Acceso denegado. Debes usar tu correo institucional @esan.edu.pe o @ue.edu.pe</p>
+  <div id="g_id_onload" data-client_id="329913131839-gt27q8hpp3rkev7hl303ekgl1nl1utgu.apps.googleusercontent.com" data-callback="handleCredentialResponse" data-auto_prompt="false"></div>
+  <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left"></div>
+  <p class="error-msg" id="login-error">Acceso denegado. Debes usar tu correo @esan.edu.pe o @ue.edu.pe</p>
 </div>
 
-<!-- CONTENIDO PRINCIPAL (Oculto hasta hacer login) -->
+<!-- CONTENIDO PRINCIPAL -->
 <div id="app-content">
   <div class="topbar">
     <div class="dot"></div>
-    <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales · 2do Trimestre 2026</span>
+    <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales</span>
   </div>
 
   <div class="wrap">
     <div class="hero">
       <p class="eyebrow">Equipo Audiovisual ESAN</p>
       <h1>Suma horas de<br><em>mérito</em> ESAN Labs</h1>
-      <p>Agosto y septiembre abren cinco proyectos reales de producción. Completa este formulario para postular.</p>
-
+      <p>Selecciona tu modalidad, completa tus datos y forma parte de las producciones.</p>
       <div class="lower-third">
         <div class="lt-name" id="ltName">TU NOMBRE APARECERÁ AQUÍ</div>
-        <div class="lt-role" id="ltRole">SELECCIONA UN PROYECTO Y UNA FUNCIÓN</div>
+        <div class="lt-role" id="ltRole">SELECCIONA UNA FUNCIÓN</div>
         <div class="lt-hint">Así se vería tu placa si estuvieras al aire hoy.</div>
       </div>
     </div>
 
-    <!-- SECTION 1: PROJECT -->
+    <!-- SECTION 1: ROLES (Divididos) -->
     <div class="section">
       <div class="sec-head">
         <span class="sec-num">01</span>
-        <span class="sec-title">Elige tu proyecto</span>
+        <span class="sec-title">Elige tu Modalidad y Función</span>
       </div>
-      <div class="lineup" id="lineup"></div>
-
-      <div class="chip-field">
-        <span class="chip-label">Función o puesto</span>
-        <div class="chips" id="roleChips"></div>
-        <p class="empty-note" id="roleEmpty">Selecciona primero un proyecto.</p>
+      <div class="chip-field" style="margin-top:0;">
+        <span class="chip-label">MÉRITOS PERMANENTES (Turno fijo)</span>
+        <div class="chips" id="rolesPermanentes"></div>
+        <p class="empty-note" id="permEmpty" style="display:none;">No hay vacantes permanentes disponibles.</p>
+      </div>
+      <div class="chip-field" style="margin-top:24px;">
+        <span class="chip-label">MÉRITOS POR EVENTO (Fechas específicas)</span>
+        <div class="chips" id="rolesEvento"></div>
+        <p class="empty-note" id="evtEmpty" style="display:none;">No hay eventos disponibles.</p>
       </div>
     </div>
 
-    <!-- SECTION 2: AVAILABILITY -->
-    <div class="section">
+    <!-- SECTION 2: EVENTOS (Oculto por defecto) -->
+    <div class="section" id="sec-proyecto" style="display:none;">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <span class="sec-title">Elige el Evento</span>
+      </div>
+      <div class="lineup" id="lineup"></div>
+    </div>
+
+    <!-- SECTION 3: DISPONIBILIDAD (Oculto por defecto) -->
+    <div class="section" id="sec-disponibilidad" style="display:none;">
       <div class="sec-head">
         <span class="sec-num">02</span>
         <span class="sec-title">Disponibilidad</span>
       </div>
-      <span class="chip-label">Días (agosto y septiembre, turno fijo)</span>
+      <span class="chip-label">Días (turno fijo)</span>
       <div class="chips" id="dayChips" style="margin-bottom:20px;"></div>
-
       <div class="field" style="max-width:320px;">
-        <label class="f-label" for="turno">Turno (rango de horas, 9:00 a.m. a 9:00 p.m.)</label>
+        <label class="f-label" for="turno">Turno (rango de horas)</label>
         <input type="text" id="turno" placeholder="Ej. 9:00 a.m. – 1:00 p.m.">
       </div>
     </div>
 
-    <!-- SECTION 3: DATA -->
+    <!-- SECTION 4: DATOS -->
     <div class="section">
       <div class="sec-head">
         <span class="sec-num">03</span>
         <span class="sec-title">Tus datos</span>
       </div>
       <div class="grid">
-        <div class="field">
-          <label class="f-label" for="nombre">Nombre completo (Automático)</label>
-          <input type="text" id="nombre" disabled>
-        </div>
-        <div class="field">
-          <label class="f-label" for="correo">Correo (Automático)</label>
-          <input type="text" id="correo" disabled>
-        </div>
-        <div class="field">
-          <label class="f-label" for="carrera">Carrera</label>
-          <input type="text" id="carrera" placeholder="Ej. Comunicaciones">
-        </div>
-        <div class="field">
-          <label class="f-label" for="codigo">Código de alumno</label>
-          <input type="text" id="codigo" placeholder="Ej. 20231234">
-        </div>
+        <div class="field"><label class="f-label" for="nombre">Nombre completo</label><input type="text" id="nombre" disabled></div>
+        <div class="field"><label class="f-label" for="correo">Correo</label><input type="text" id="correo" disabled></div>
+        <div class="field"><label class="f-label" for="carrera">Carrera</label><input type="text" id="carrera" placeholder="Ej. Comunicaciones"></div>
+        <div class="field"><label class="f-label" for="codigo">Código</label><input type="text" id="codigo" placeholder="Ej. 20231234"></div>
       </div>
     </div>
 
-    <!-- SECTION 4: SUMMARY & SUBMIT -->
+    <!-- SECTION 5: RESUMEN -->
     <div class="section">
       <div class="sec-head">
         <span class="sec-num">04</span>
@@ -123,18 +103,14 @@
       </div>
       <div class="summary">
         <pre id="summaryText"></pre>
-        <div class="actions">
-          <button class="btn primary" id="submitBtn" disabled>Enviar Postulación</button>
-        </div>
+        <div class="actions"><button class="btn primary" id="submitBtn" disabled>Enviar Postulación</button></div>
         <div class="toast" id="toast"></div>
       </div>
     </div>
 
-    <footer>Equipo Audiovisual ESAN · Convocatoria Méritos Audiovisuales · 2do Trimestre 2026</footer>
+    <footer>Equipo Audiovisual ESAN · Convocatoria Méritos Audiovisuales</footer>
   </div>
 </div>
-
-<!-- Enlace a tu nuevo archivo de lógica JavaScript -->
 <script src="main.js"></script>
 </body>
 </html>
