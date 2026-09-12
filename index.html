@@ -139,19 +139,44 @@
           <button id="closeAdminBtn" style="background:transparent; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
         </div>
         
-        <h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:8px;">Crear Evento / Mérito</h3>
-        <div class="grid" style="margin-bottom:24px;">
-          <div class="field"><input type="text" id="a_evento" placeholder="Nombre (Ej. Foro Marketing)"></div>
-          <div class="field"><input type="number" id="a_vacantes" placeholder="Vacantes Totales (Ej. 5)"></div>
-          <div class="field"><input type="text" id="a_desc" placeholder="Descripción breve"></div>
-          <div class="field"><input type="text" id="a_roles" placeholder="Roles (Ej. Foto:2, Editor:3)"></div>
-          <div class="field"><input type="text" id="a_fecha" placeholder="Fecha (DD/MM/YYYY)"></div>
-          <div class="field">
-            <select id="a_tipo" style="width:100%; padding:12px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+        <h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:8px; margin-top:20px;">Crear Evento / Mérito</h3>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px; margin-top:16px;">
+          
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="color:#888; font-size:11px; text-transform:uppercase; font-weight:bold;">Nombre del Proyecto</label>
+            <input type="text" id="a_evento" placeholder="Ej. Foro Marketing" style="padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="color:#888; font-size:11px; text-transform:uppercase; font-weight:bold;">Vacantes Totales</label>
+            <input type="number" id="a_vacantes" placeholder="Ej. 5" style="padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+          </div>
+
+          <div style="grid-column: span 2; display:flex; flex-direction:column; gap:6px;">
+            <label style="color:#888; font-size:11px; text-transform:uppercase; font-weight:bold;">Descripción Breve</label>
+            <input type="text" id="a_desc" placeholder="Detalle corto para los alumnos" style="padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+          </div>
+
+          <div style="grid-column: span 2; display:flex; flex-direction:column; gap:6px;">
+            <label style="color:#888; font-size:11px; text-transform:uppercase; font-weight:bold;">Roles (Rol:Cupo, separados por coma)</label>
+            <input type="text" id="a_roles" placeholder="Ej. Fotógrafo:2, Editor:3" style="padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="color:#888; font-size:11px; text-transform:uppercase; font-weight:bold;">Fecha Límite</label>
+            <input type="text" id="a_fecha" placeholder="DD/MM/YYYY" style="padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label style="color:#888; font-size:11px; text-transform:uppercase; font-weight:bold;">Tipo de Mérito</label>
+            <select id="a_tipo" style="padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
               <option value="Evento">Evento</option>
               <option value="Permanente">Permanente</option>
             </select>
           </div>
+
+        </div>
+        <button id="addEventBtn" class="btn primary" style="width:auto; padding:10px 20px; font-size:12px;">+ Agregar Proyecto</button>
         </div>
         <button id="addEventBtn" class="btn primary" style="width:auto; padding:10px 20px; font-size:12px;">+ Agregar Proyecto</button>
         
