@@ -37,8 +37,10 @@
   <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 </div>
 
-<!-- CONTENIDO PRINCIPAL -->
-<div class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
+<!-- CONTENIDO PRINCIPAL (AQUÍ ESTABA EL ERROR: FALTABA ESTE DIV) -->
+<div id="app-content" style="display:none;">
+  
+  <div class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <div class="dot"></div>
       <span><strong>EN VIVO</strong> — Convocatoria Méritos</span>
@@ -168,6 +170,8 @@
     <footer>Equipo Audiovisual ESAN · Convocatoria Méritos Audiovisuales</footer>
   </div>
 </div>
+<!-- FIN DEL CONTENIDO PRINCIPAL -->
+
 <script src="main.js?v=1.2"></script>
 </body>
 </html>
