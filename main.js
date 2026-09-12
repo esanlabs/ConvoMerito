@@ -16,7 +16,6 @@ function handleCredentialResponse(response) {
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('login-screen').style.display = 'none';
     
-    // Mostramos la pantalla de carga en lugar de la app
     document.getElementById('loading-screen').style.display = 'flex';
     document.getElementById('app-content').style.display = 'none';
     
@@ -32,7 +31,6 @@ function handleCredentialResponse(response) {
 let PROJECTS = []; 
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 
-// Añadimos 'tipo' al estado global
 let state = { tipo: null, project: null, role: null, days: [] };
 
 const lineupEl = document.getElementById('lineup');
@@ -46,15 +44,17 @@ async function cargarVacantes() {
     PROJECTS = JSON.parse(await res.text()); 
     updateUI();
     
-    // Ocultamos la carga y revelamos la aplicación
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
   } catch(e) {
-    console.error("Error:", e);
+    console.error("Error al cargar vacantes:", e);
+    // Recuperación ante error de conexión para evitar pantalla colgada
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    alert('Error al conectar con la base de datos. Por favor intenta iniciar sesión de nuevo.');
   }
 }
 
-// Control maestro de visualización
 function updateUI() {
   renderRoles();
   
@@ -76,7 +76,6 @@ function updateUI() {
   updateSummary();
 }
 
-// ---------- RENDER DE ROLES CON SCROLL AUTOMÁTICO ----------
 function renderRoles() {
   rolesPermEl.innerHTML = '';
   rolesEvtEl.innerHTML = '';
@@ -101,7 +100,6 @@ function renderRoles() {
       state.project = proj ? proj.id : null;
       updateUI();
       
-      // Scroll suave hacia la sección de Disponibilidad
       setTimeout(() => {
         document.getElementById('sec-disponibilidad')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -119,7 +117,6 @@ function renderRoles() {
       state.role = r;
       updateUI();
 
-      // Scroll suave hacia la sección de Selección de Evento
       setTimeout(() => {
         document.getElementById('sec-proyecto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -128,7 +125,6 @@ function renderRoles() {
   });
 }
 
-// ---------- RENDER DE LINEUP CON SCROLL AUTOMÁTICO ----------
 function renderLineup(){
   lineupEl.innerHTML = '';
   const eventosFiltrados = PROJECTS.filter(p => p.tipo.toLowerCase() !== 'permanente' && p.roles.includes(state.role));
@@ -167,7 +163,6 @@ function renderLineup(){
         renderLineup();
         updateSummary();
 
-        // Scroll suave hacia la sección de Datos Personales
         setTimeout(() => {
           document.getElementById('sec-datos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -202,12 +197,10 @@ const turnoEl = document.getElementById('turno');
 function getDispoStr() {
   const p = PROJECTS.find(x => x.id === state.project);
 
-  // Si es evento, usamos la fecha del evento seleccionado
   if (state.tipo === 'Evento') {
     return p && p.fechaLimite ? `Día del evento: ${p.fechaLimite}` : 'Selecciona un evento';
   }
 
-  // Si es permanente, mantiene la lógica de días y turnos
   const turnoVal = turnoEl.value.trim();
   const dispo = [];
   if(state.days.length) dispo.push(state.days.join(', '));
@@ -215,7 +208,6 @@ function getDispoStr() {
   return dispo.join(' — ');
 }
 
-// ---------- RESUMEN Y BLOQUEO VISUAL PREVENTIVO ----------
 function updateSummary(){
   const p = PROJECTS.find(x => x.id === state.project);
   const nombre = nombreEl.value.trim();
@@ -245,7 +237,6 @@ function updateSummary(){
   }
   document.getElementById('summaryText').textContent = lines.join('\n');
 
-  // Evaluación de requisitos faltantes para guiado dinámico en el botón
   const carreraValida = carreraEl.value.trim() !== '';
   const codigoValido = codigoEl.value.trim() !== '';
   const dispoValida = state.tipo === 'Evento' || (state.days.length > 0 || turnoEl.value.trim() !== '');
@@ -272,7 +263,6 @@ function updateSummary(){
   }
 }
 
-// ---------- ENVÍO CON EFECTO DE CONFETI ----------
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const p = PROJECTS.find(x => x.id === state.project);
   const btn = document.getElementById('submitBtn');
@@ -304,7 +294,6 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       return;
     }
     
-    // Disparar animación de confeti en pantalla
     if (typeof confetti === 'function') {
       confetti({
         particleCount: 120,
@@ -325,22 +314,19 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
 });
 
-// ---------- LÓGICA DE CERRAR SESIÓN ----------
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  // Desactiva la auto-selección de cuenta de Google
-  google.accounts.id.disableAutoSelect();
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
   
-  // Limpia los datos del formulario
   document.getElementById('carrera').value = '';
   document.getElementById('codigo').value = '';
   document.getElementById('turno').value = '';
   
-  // Resetea el estado
   state = { tipo: null, project: null, role: null, days: [] };
   
-  // Devuelve a la pantalla de login
   document.getElementById('app-content').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex'; // o 'block' según tu CSS original
+  document.getElementById('login-screen').style.display = 'flex';
 });
 
 function showToast(msg){
