@@ -76,6 +76,7 @@ function updateUI() {
   updateSummary();
 }
 
+// ---------- RENDER DE ROLES CON SCROLL AUTOMÁTICO ----------
 function renderRoles() {
   rolesPermEl.innerHTML = '';
   rolesEvtEl.innerHTML = '';
@@ -96,10 +97,14 @@ function renderRoles() {
     btn.addEventListener('click', () => {
       state.tipo = 'Permanente';
       state.role = r;
-      // Asignamos directamente el proyecto permanente asociado al rol
       const proj = pPerm.find(x => x.roles.includes(r));
       state.project = proj ? proj.id : null;
       updateUI();
+      
+      // Scroll suave hacia la sección de Disponibilidad
+      setTimeout(() => {
+        document.getElementById('sec-disponibilidad')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     });
     rolesPermEl.appendChild(btn);
   });
@@ -109,19 +114,23 @@ function renderRoles() {
     btn.className = 'chip' + (state.role === r && state.tipo === 'Evento' ? ' active' : '');
     btn.textContent = r;
     btn.addEventListener('click', () => {
-      // Si cambia de rol, reseteamos el proyecto seleccionado
       if (state.role !== r) state.project = null; 
       state.tipo = 'Evento';
       state.role = r;
       updateUI();
+
+      // Scroll suave hacia la sección de Selección de Evento
+      setTimeout(() => {
+        document.getElementById('sec-proyecto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     });
     rolesEvtEl.appendChild(btn);
   });
 }
 
+// ---------- RENDER DE LINEUP CON SCROLL AUTOMÁTICO ----------
 function renderLineup(){
   lineupEl.innerHTML = '';
-  // Filtramos solo los eventos que soliciten el rol seleccionado
   const eventosFiltrados = PROJECTS.filter(p => p.tipo.toLowerCase() !== 'permanente' && p.roles.includes(state.role));
   
   if(eventosFiltrados.length === 0){
@@ -157,6 +166,11 @@ function renderLineup(){
         state.project = p.id;
         renderLineup();
         updateSummary();
+
+        // Scroll suave hacia la sección de Datos Personales
+        setTimeout(() => {
+          document.getElementById('sec-datos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       });
     }
     lineupEl.appendChild(div);
@@ -201,12 +215,13 @@ function getDispoStr() {
   return dispo.join(' — ');
 }
 
+// ---------- RESUMEN Y BLOQUEO VISUAL PREVENTIVO ----------
 function updateSummary(){
   const p = PROJECTS.find(x => x.id === state.project);
   const nombre = nombreEl.value.trim();
   const dispoStr = getDispoStr();
+  const btn = document.getElementById('submitBtn');
 
-  // Actualiza la placa en vivo
   document.getElementById('ltName').textContent = nombre ? nombre.toUpperCase() : 'TU NOMBRE APARECERÁ AQUÍ';
   
   if (state.tipo === 'Permanente' && p && state.role) {
@@ -217,7 +232,6 @@ function updateSummary(){
     document.getElementById('ltRole').textContent = 'SELECCIONA UNA MODALIDAD Y FUNCIÓN';
   }
 
-  // Texto resumen
   const lines = [
     `Nombre: ${nombre || '—'}`,
     `Carrera: ${carreraEl.value.trim() || '—'}`,
@@ -231,19 +245,34 @@ function updateSummary(){
   }
   document.getElementById('summaryText').textContent = lines.join('\n');
 
-  // Lógica de validación para habilitar el botón
+  // Evaluación de requisitos faltantes para guiado dinámico en el botón
   const carreraValida = carreraEl.value.trim() !== '';
   const codigoValido = codigoEl.value.trim() !== '';
-  
-  let complete = nombre && carreraValida && codigoValido && state.role && p;
-  
-  if (state.tipo === 'Permanente') {
-    complete = complete && (state.days.length > 0 || turnoEl.value.trim() !== '');
+  const dispoValida = state.tipo === 'Evento' || (state.days.length > 0 || turnoEl.value.trim() !== '');
+
+  let faltante = '';
+  if (!state.role) {
+    faltante = 'Elige una función';
+  } else if (state.tipo === 'Evento' && !p) {
+    faltante = 'Selecciona un evento';
+  } else if (state.tipo === 'Permanente' && !dispoValida) {
+    faltante = 'Indica tus días/turno';
+  } else if (!carreraValida) {
+    faltante = 'Ingresa tu carrera';
+  } else if (!codigoValido) {
+    faltante = 'Ingresa tu código';
   }
-  document.getElementById('submitBtn').disabled = !complete;
+
+  if (faltante !== '') {
+    btn.disabled = true;
+    btn.textContent = `Falta: ${faltante}`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Enviar Postulación';
+  }
 }
 
-// ---------- SUBMIT LOGIC TO GOOGLE SHEETS ----------
+// ---------- ENVÍO CON EFECTO DE CONFETI ----------
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const p = PROJECTS.find(x => x.id === state.project);
   const btn = document.getElementById('submitBtn');
@@ -267,30 +296,32 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       body: JSON.stringify(payload)
     });
     
-    // Leemos la respuesta de Apps Script
     const result = await response.json();
     
     if (result.status === 'error') {
-      // Muestra el mensaje: "Ya estás registrado" o "Intenta en 5 segundos"
       showToast(result.message);
-      btn.textContent = 'Enviar Postulación';
-      btn.disabled = false;
-      return; // Detiene la ejecución aquí
+      updateSummary();
+      return;
     }
     
-    // Si el status es "success"
+    // Disparar animación de confeti en pantalla
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 120,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+
     showToast('¡Postulación enviada con éxito!');
     
     state.project = null; 
     document.getElementById('turno').value = ''; 
     
     await cargarVacantes(); 
-    
-    btn.textContent = 'Enviar Postulación'; 
   } catch(e) {
     showToast('Hubo un error de conexión. Por favor intenta de nuevo.');
-    btn.textContent = 'Enviar Postulación';
-    btn.disabled = false;
+    updateSummary();
   }
 });
 
