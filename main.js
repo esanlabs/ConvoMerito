@@ -250,25 +250,34 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   btn.disabled = true;
 
   try {
-    // 1. Envía los datos a Google Sheets
-    await fetch(SCRIPT_URL, {
+    const response = await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
     
+    // Leemos la respuesta de Apps Script
+    const result = await response.json();
+    
+    if (result.status === 'error') {
+      // Muestra el mensaje: "Ya estás registrado" o "Intenta en 5 segundos"
+      showToast(result.message);
+      btn.textContent = 'Enviar Postulación';
+      btn.disabled = false;
+      return; // Detiene la ejecución aquí
+    }
+    
+    // Si el status es "success"
     showToast('¡Postulación enviada con éxito!');
     
-    // 2. Resetea la selección del usuario
     state.project = null; 
     document.getElementById('turno').value = ''; 
     
-    // 3. Vuelve a descargar los datos (esto actualiza las vacantes automáticamente)
     await cargarVacantes(); 
     
-    btn.textContent = 'Enviar Postulación'; // Restaura el botón para futuras acciones
+    btn.textContent = 'Enviar Postulación'; 
   } catch(e) {
-    showToast('Hubo un error al enviar. Por favor intenta de nuevo.');
+    showToast('Hubo un error de conexión. Por favor intenta de nuevo.');
     btn.textContent = 'Enviar Postulación';
     btn.disabled = false;
   }
