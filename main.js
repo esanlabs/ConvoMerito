@@ -197,7 +197,6 @@ function renderLineup(){
     }
 
     div.innerHTML = `
-      <span class="ch-code">${p.code}</span>
       <div class="ch-body">
         <p class="ch-title">${p.title}</p>
         <p class="ch-sub">${p.sub}</p>
