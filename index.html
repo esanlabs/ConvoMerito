@@ -35,10 +35,14 @@
 </div>
 
 <!-- CONTENIDO PRINCIPAL -->
-<div id="app-content">
-  <div class="topbar">
-    <div class="dot"></div>
-    <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales</span>
+<div id="app-content" style="display:none;"> <!-- Asegúrate de que empiece oculto -->
+  <div class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+      <div class="dot"></div>
+      <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales</span>
+    </div>
+    <!-- NUEVO BOTÓN CERRAR SESIÓN -->
+    <button id="logoutBtn" style="background:transparent; border:1px solid #333; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-family:'Inter', sans-serif;">Cerrar sesión</button>
   </div>
 
   <div class="wrap">
