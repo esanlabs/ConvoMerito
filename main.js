@@ -250,14 +250,23 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   btn.disabled = true;
 
   try {
+    // 1. Envía los datos a Google Sheets
     await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
     
-    showToast('¡Postulación enviada a la base de datos con éxito!');
-    btn.textContent = 'Enviado ✓';
+    showToast('¡Postulación enviada con éxito!');
+    
+    // 2. Resetea la selección del usuario
+    state.project = null; 
+    document.getElementById('turno').value = ''; 
+    
+    // 3. Vuelve a descargar los datos (esto actualiza las vacantes automáticamente)
+    await cargarVacantes(); 
+    
+    btn.textContent = 'Enviar Postulación'; // Restaura el botón para futuras acciones
   } catch(e) {
     showToast('Hubo un error al enviar. Por favor intenta de nuevo.');
     btn.textContent = 'Enviar Postulación';
