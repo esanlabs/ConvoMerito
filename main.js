@@ -402,7 +402,7 @@ function renderAdminPanel() {
           <strong style="color:var(--gold);">${p.title}</strong> (${p.tipo})<br>
           <span style="font-size:12px; color:#888;">Vacantes: ${p.vacTotales} | Roles: ${p.rolesRaw} | Fecha: ${p.fechaLimite}</span>
         </div>
-        <button onclick="deleteEvent('${p.title}')" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Borrar</button>
+        <button onclick="deleteEvent('${p.title}', this)" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Borrar</button>
       </div>
     `;
   });
@@ -413,7 +413,7 @@ function renderAdminPanel() {
     adList.innerHTML += `
       <div style="background:#222; padding:8px 12px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
         <span style="color:#fff;">${email}</span>
-        ${email !== 'mtello@esan.edu.pe' ? `<button onclick="deleteAdmin('${email}')" style="background:#333; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">X</button>` : `<span style="color:#888; font-size:11px;">Master</span>`}
+        ${email !== 'mtello@esan.edu.pe' ? `<button onclick="deleteAdmin('${email}', this)" style="background:#333; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">X</button>` : `<span style="color:#888; font-size:11px;">Master</span>`}
       </div>
     `;
   });
@@ -424,6 +424,7 @@ async function adminAction(payload, btnElement, loadingText) {
   const originalText = btnElement.textContent;
   btnElement.textContent = loadingText;
   btnElement.disabled = true;
+  let isSuccess = false; // Variable para saber si se guardó bien
 
   try {
     const response = await fetch(SCRIPT_URL, {
@@ -435,6 +436,7 @@ async function adminAction(payload, btnElement, loadingText) {
     if (result.status === 'success') {
       showToast('Actualizado correctamente');
       await cargarVacantes(); // Recarga y sincroniza todo en tiempo real
+      isSuccess = true;
     } else {
       showToast(result.message);
     }
@@ -444,40 +446,61 @@ async function adminAction(payload, btnElement, loadingText) {
     btnElement.textContent = originalText;
     btnElement.disabled = false;
   }
+  
+  return isSuccess;
 }
 
 // Agregar Evento
-document.getElementById('addEventBtn').addEventListener('click', function() {
+document.getElementById('addEventBtn').addEventListener('click', async function() {
+  const inputs = [
+    document.getElementById('a_evento'),
+    document.getElementById('a_vacantes'),
+    document.getElementById('a_desc'),
+    document.getElementById('a_roles'),
+    document.getElementById('a_fecha')
+  ];
+
   const payload = {
     action: 'add_event',
-    evento: document.getElementById('a_evento').value,
-    vacantes: document.getElementById('a_vacantes').value,
-    desc: document.getElementById('a_desc').value,
-    roles: document.getElementById('a_roles').value,
-    fecha: document.getElementById('a_fecha').value,
+    evento: inputs[0].value,
+    vacantes: inputs[1].value,
+    desc: inputs[2].value,
+    roles: inputs[3].value,
+    fecha: inputs[4].value,
     tipo: document.getElementById('a_tipo').value
   };
+
   if(!payload.evento || !payload.roles) return alert("Completa Nombre y Roles");
-  adminAction(payload, this, 'Agregando...');
+  
+  // Enviamos la data y guardamos el estado de éxito
+  const success = await adminAction(payload, this, 'Guardando...');
+  
+  // Si fue exitoso, limpiamos los campos
+  if (success) {
+    inputs.forEach(input => input.value = '');
+  }
 });
 
 // Borrar Evento
-window.deleteEvent = function(titulo) {
+window.deleteEvent = function(titulo, btn) {
   if(!confirm(`¿Borrar el evento "${titulo}"?`)) return;
-  adminAction({ action: 'del_event', evento: titulo }, document.getElementById('addEventBtn'), 'Borrando...');
+  adminAction({ action: 'del_event', evento: titulo }, btn, 'Borrando...');
 };
 
 // Agregar Admin
-document.getElementById('addAdminBtn').addEventListener('click', function() {
-  const email = document.getElementById('a_new_admin').value.trim();
+document.getElementById('addAdminBtn').addEventListener('click', async function() {
+  const input = document.getElementById('a_new_admin');
+  const email = input.value.trim();
   if(!email) return;
-  adminAction({ action: 'add_admin', email: email }, this, 'Agregando...');
+  
+  const success = await adminAction({ action: 'add_admin', email: email }, this, 'Agregando...');
+  if (success) input.value = ''; // Limpiamos el campo si tuvo éxito
 });
 
 // Borrar Admin
-window.deleteAdmin = function(email) {
+window.deleteAdmin = function(email, btn) {
   if(!confirm(`¿Quitar permisos a ${email}?`)) return;
-  adminAction({ action: 'del_admin', email: email }, document.getElementById('addAdminBtn'), 'Quitando...');
+  adminAction({ action: 'del_admin', email: email }, btn, 'Quitando...');
 };
 
 function showToast(msg){
@@ -485,5 +508,7 @@ function showToast(msg){
   t.textContent = msg;
   setTimeout(() => { if(t.textContent === msg) t.textContent = ''; }, 4000);
 }
+
+renderDays();
 
 renderDays();
