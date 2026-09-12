@@ -12,6 +12,8 @@ function parseJwt(token) {
 
 function handleCredentialResponse(response) {
   const data = parseJwt(response.credential);
+  loggedEmail = data.email; // Guardamos el correo
+  
   if(data.email.endsWith('@esan.edu.pe') || data.email.endsWith('@ue.edu.pe')) {
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('login-screen').style.display = 'none';
@@ -29,6 +31,8 @@ function handleCredentialResponse(response) {
 
 // ---------- FORM LOGIC ----------
 let PROJECTS = []; 
+let ADMINS = []; // Nueva lista de admins
+let loggedEmail = ""; // Para saber quién entró
 const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes'];
 
 let state = { tipo: null, project: null, role: null, days: [] };
@@ -41,8 +45,19 @@ const dayChipsEl = document.getElementById('dayChips');
 async function cargarVacantes() {
   try {
     const res = await fetch(SCRIPT_URL);
-    PROJECTS = JSON.parse(await res.text()); 
+    const jsonRes = JSON.parse(await res.text()); 
+    PROJECTS = jsonRes.proyectos; // Ahora viene estructurado así
+    ADMINS = jsonRes.admins;      // Obtenemos los admins
+    
     updateUI();
+    
+    // Activar botón de Admin si el usuario actual está en la lista
+    if (ADMINS.includes(loggedEmail)) {
+      document.getElementById('adminBtn').style.display = 'block';
+      renderAdminPanel(); // Renderizamos datos internos
+    } else {
+      document.getElementById('adminBtn').style.display = 'none';
+    }
     
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
@@ -304,6 +319,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   const btn = document.getElementById('submitBtn');
   
   const payload = {
+    action: 'register',
     nombre: document.getElementById('nombre').value.trim(),
     carrera: document.getElementById('carrera').value.trim(),
     codigo: document.getElementById('codigo').value.trim(),
@@ -364,6 +380,106 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   document.getElementById('app-content').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
 });
+
+// ==========================================
+// LÓGICA DEL PANEL DE ADMINISTRADOR
+// ==========================================
+
+const adminBtn = document.getElementById('adminBtn');
+const adminModal = document.getElementById('adminModal');
+const closeAdminBtn = document.getElementById('closeAdminBtn');
+
+adminBtn.addEventListener('click', () => adminModal.style.display = 'flex');
+closeAdminBtn.addEventListener('click', () => adminModal.style.display = 'none');
+
+// Renderizar listas en el Modal
+function renderAdminPanel() {
+  const evList = document.getElementById('adminEventsList');
+  evList.innerHTML = '';
+  PROJECTS.forEach(p => {
+    evList.innerHTML += `
+      <div style="background:#222; padding:12px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="color:var(--gold);">${p.title}</strong> (${p.tipo})<br>
+          <span style="font-size:12px; color:#888;">Vacantes: ${p.vacTotales} | Roles: ${p.rolesRaw} | Fecha: ${p.fechaLimite}</span>
+        </div>
+        <button onclick="deleteEvent('${p.title}')" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer;">Borrar</button>
+      </div>
+    `;
+  });
+
+  const adList = document.getElementById('adminUsersList');
+  adList.innerHTML = '';
+  ADMINS.forEach(email => {
+    adList.innerHTML += `
+      <div style="background:#222; padding:8px 12px; border-radius:6px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#fff;">${email}</span>
+        ${email !== 'mtello@esan.edu.pe' ? `<button onclick="deleteAdmin('${email}')" style="background:#333; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">X</button>` : `<span style="color:#888; font-size:11px;">Master</span>`}
+      </div>
+    `;
+  });
+}
+
+// Función genérica para enviar acciones admin al servidor
+async function adminAction(payload, btnElement, loadingText) {
+  const originalText = btnElement.textContent;
+  btnElement.textContent = loadingText;
+  btnElement.disabled = true;
+
+  try {
+    const response = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (result.status === 'success') {
+      showToast('Actualizado correctamente');
+      await cargarVacantes(); // Recarga y sincroniza todo en tiempo real
+    } else {
+      showToast(result.message);
+    }
+  } catch(e) {
+    showToast('Error de conexión');
+  } finally {
+    btnElement.textContent = originalText;
+    btnElement.disabled = false;
+  }
+}
+
+// Agregar Evento
+document.getElementById('addEventBtn').addEventListener('click', function() {
+  const payload = {
+    action: 'add_event',
+    evento: document.getElementById('a_evento').value,
+    vacantes: document.getElementById('a_vacantes').value,
+    desc: document.getElementById('a_desc').value,
+    roles: document.getElementById('a_roles').value,
+    fecha: document.getElementById('a_fecha').value,
+    tipo: document.getElementById('a_tipo').value
+  };
+  if(!payload.evento || !payload.roles) return alert("Completa Nombre y Roles");
+  adminAction(payload, this, 'Agregando...');
+});
+
+// Borrar Evento
+window.deleteEvent = function(titulo) {
+  if(!confirm(`¿Borrar el evento "${titulo}"?`)) return;
+  adminAction({ action: 'del_event', evento: titulo }, document.getElementById('addEventBtn'), 'Borrando...');
+};
+
+// Agregar Admin
+document.getElementById('addAdminBtn').addEventListener('click', function() {
+  const email = document.getElementById('a_new_admin').value.trim();
+  if(!email) return;
+  adminAction({ action: 'add_admin', email: email }, this, 'Agregando...');
+});
+
+// Borrar Admin
+window.deleteAdmin = function(email) {
+  if(!confirm(`¿Quitar permisos a ${email}?`)) return;
+  adminAction({ action: 'del_admin', email: email }, document.getElementById('addAdminBtn'), 'Quitando...');
+};
 
 function showToast(msg){
   const t = document.getElementById('toast');
