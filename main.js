@@ -76,6 +76,7 @@ function updateUI() {
   updateSummary();
 }
 
+// ---------- RENDER DE ROLES CON CONTADOR DE CUPOS ----------
 function renderRoles() {
   rolesPermEl.innerHTML = '';
   rolesEvtEl.innerHTML = '';
@@ -83,51 +84,84 @@ function renderRoles() {
   const pPerm = PROJECTS.filter(p => p.tipo.toLowerCase() === 'permanente');
   const pEvt = PROJECTS.filter(p => p.tipo.toLowerCase() !== 'permanente');
 
-  const rolesPerm = [...new Set(pPerm.flatMap(p => p.roles))];
-  const rolesEvt = [...new Set(pEvt.flatMap(p => p.roles))];
+  // Obtener nombres únicos de roles para cada modalidad
+  const rolesPermNombres = [...new Set(pPerm.flatMap(p => p.roles.map(r => r.nombre)))];
+  const rolesEvtNombres = [...new Set(pEvt.flatMap(p => p.roles.map(r => r.nombre)))];
 
-  document.getElementById('permEmpty').style.display = rolesPerm.length ? 'none' : 'block';
-  document.getElementById('evtEmpty').style.display = rolesEvt.length ? 'none' : 'block';
+  document.getElementById('permEmpty').style.display = rolesPermNombres.length ? 'none' : 'block';
+  document.getElementById('evtEmpty').style.display = rolesEvtNombres.length ? 'none' : 'block';
 
-  rolesPerm.forEach(r => {
-    const btn = document.createElement('button');
-    btn.className = 'chip' + (state.role === r && state.tipo === 'Permanente' ? ' active' : '');
-    btn.textContent = r;
-    btn.addEventListener('click', () => {
-      state.tipo = 'Permanente';
-      state.role = r;
-      const proj = pPerm.find(x => x.roles.includes(r));
-      state.project = proj ? proj.id : null;
-      updateUI();
-      
-      setTimeout(() => {
-        document.getElementById('sec-disponibilidad')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+  // Render para MÉRITOS PERMANENTES
+  rolesPermNombres.forEach(nombreRol => {
+    let dispTotal = 0;
+    pPerm.forEach(p => {
+      const rObj = p.roles.find(r => r.nombre === nombreRol);
+      if (rObj) dispTotal += rObj.disponibles;
     });
+
+    const btn = document.createElement('button');
+    const agotado = dispTotal <= 0;
+    btn.className = 'chip' + (state.role === nombreRol && state.tipo === 'Permanente' ? ' active' : '');
+    btn.textContent = `${nombreRol}: ${agotado ? 'AGOTADO' : dispTotal}`;
+    
+    if (agotado) {
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.addEventListener('click', () => {
+        state.tipo = 'Permanente';
+        state.role = nombreRol;
+        const proj = pPerm.find(x => x.roles.some(r => r.nombre === nombreRol));
+        state.project = proj ? proj.id : null;
+        updateUI();
+        
+        setTimeout(() => {
+          document.getElementById('sec-disponibilidad')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
+    }
     rolesPermEl.appendChild(btn);
   });
 
-  rolesEvt.forEach(r => {
-    const btn = document.createElement('button');
-    btn.className = 'chip' + (state.role === r && state.tipo === 'Evento' ? ' active' : '');
-    btn.textContent = r;
-    btn.addEventListener('click', () => {
-      if (state.role !== r) state.project = null; 
-      state.tipo = 'Evento';
-      state.role = r;
-      updateUI();
-
-      setTimeout(() => {
-        document.getElementById('sec-proyecto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
+  // Render para MÉRITOS POR EVENTO
+  rolesEvtNombres.forEach(nombreRol => {
+    let dispTotal = 0;
+    pEvt.forEach(p => {
+      const rObj = p.roles.find(r => r.nombre === nombreRol);
+      if (rObj) dispTotal += rObj.disponibles;
     });
+
+    const btn = document.createElement('button');
+    const agotado = dispTotal <= 0;
+    btn.className = 'chip' + (state.role === nombreRol && state.tipo === 'Evento' ? ' active' : '');
+    btn.textContent = `${nombreRol}: ${agotado ? 'AGOTADO' : dispTotal}`;
+    
+    if (agotado) {
+      btn.style.opacity = '0.5';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      btn.addEventListener('click', () => {
+        if (state.role !== nombreRol) state.project = null; 
+        state.tipo = 'Evento';
+        state.role = nombreRol;
+        updateUI();
+
+        setTimeout(() => {
+          document.getElementById('sec-proyecto')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
+    }
     rolesEvtEl.appendChild(btn);
   });
 }
 
+// ---------- RENDER DE LINEUP CON VACANTES POR ROL SELECCIONADO ----------
 function renderLineup(){
   lineupEl.innerHTML = '';
-  const eventosFiltrados = PROJECTS.filter(p => p.tipo.toLowerCase() !== 'permanente' && p.roles.includes(state.role));
+  const eventosFiltrados = PROJECTS.filter(p => 
+    p.tipo.toLowerCase() !== 'permanente' && 
+    p.roles.some(r => r.nombre === state.role)
+  );
   
   if(eventosFiltrados.length === 0){
     lineupEl.innerHTML = '<p class="empty-note">No hay eventos activos para esta función en este momento.</p>';
@@ -135,9 +169,11 @@ function renderLineup(){
   }
 
   eventosFiltrados.forEach(p => {
-    const div = document.createElement('div');
-    const agotado = (typeof p.vac === 'number' ? p.vac : parseInt(p.vac)) <= 0; 
+    const rolInfo = p.roles.find(r => r.nombre === state.role);
+    const vacantesRol = rolInfo ? rolInfo.disponibles : 0;
+    const agotado = vacantesRol <= 0; 
 
+    const div = document.createElement('div');
     div.className = 'channel' + (state.project === p.id ? ' active' : '');
     if (agotado) {
       div.style.opacity = '0.4';
@@ -153,7 +189,7 @@ function renderLineup(){
         <p class="ch-sub" style="color:var(--gold); font-size:11px; margin-top:4px;">Fecha del evento: ${p.fechaLimite}</p>
       </div>
       <span class="ch-vac" style="${agotado ? 'color:var(--on-air); font-weight:bold;' : ''}">
-        ${agotado ? 'AGOTADO' : p.vac + ' vacantes'}
+        ${agotado ? 'AGOTADO' : vacantesRol + ' cupos para ' + state.role}
       </span>
     `;
     
