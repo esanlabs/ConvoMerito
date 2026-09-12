@@ -15,7 +15,10 @@ function handleCredentialResponse(response) {
   if(data.email.endsWith('@esan.edu.pe') || data.email.endsWith('@ue.edu.pe')) {
     document.getElementById('login-error').style.display = 'none';
     document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-content').style.display = 'block';
+    
+    // Mostramos la pantalla de carga en lugar de la app
+    document.getElementById('loading-screen').style.display = 'flex';
+    document.getElementById('app-content').style.display = 'none';
     
     document.getElementById('nombre').value = data.name;
     document.getElementById('correo').value = data.email;
@@ -42,6 +45,10 @@ async function cargarVacantes() {
     const res = await fetch(SCRIPT_URL);
     PROJECTS = JSON.parse(await res.text()); 
     updateUI();
+    
+    // Ocultamos la carga y revelamos la aplicación
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
   } catch(e) {
     console.error("Error:", e);
   }
@@ -225,7 +232,11 @@ function updateSummary(){
   document.getElementById('summaryText').textContent = lines.join('\n');
 
   // Lógica de validación para habilitar el botón
-  let complete = nombre && carreraEl.value.trim() && codigoEl.value.trim() && state.role && p;
+  const carreraValida = carreraEl.value.trim() !== '';
+  const codigoValido = codigoEl.value.trim() !== '';
+  
+  let complete = nombre && carreraValida && codigoValido && state.role && p;
+  
   if (state.tipo === 'Permanente') {
     complete = complete && (state.days.length > 0 || turnoEl.value.trim() !== '');
   }
@@ -281,6 +292,24 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     btn.textContent = 'Enviar Postulación';
     btn.disabled = false;
   }
+});
+
+// ---------- LÓGICA DE CERRAR SESIÓN ----------
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  // Desactiva la auto-selección de cuenta de Google
+  google.accounts.id.disableAutoSelect();
+  
+  // Limpia los datos del formulario
+  document.getElementById('carrera').value = '';
+  document.getElementById('codigo').value = '';
+  document.getElementById('turno').value = '';
+  
+  // Resetea el estado
+  state = { tipo: null, project: null, role: null, days: [] };
+  
+  // Devuelve a la pantalla de login
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex'; // o 'block' según tu CSS original
 });
 
 function showToast(msg){
