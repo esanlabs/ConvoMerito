@@ -38,13 +38,15 @@
 </div>
 
 <!-- CONTENIDO PRINCIPAL -->
-<div id="app-content" style="display:none;">
-  <div class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
+<div class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
     <div>
       <div class="dot"></div>
-      <span><strong>EN VIVO</strong> — Convocatoria Méritos Audiovisuales</span>
+      <span><strong>EN VIVO</strong> — Convocatoria Méritos</span>
     </div>
-    <button id="logoutBtn" style="background:transparent; border:1px solid #333; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-family:'Inter', sans-serif;">Cerrar sesión</button>
+    <div>
+      <button id="adminBtn" style="display:none; background:var(--gold); border:none; color:#000; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; margin-right:8px;">⚙️ Admin</button>
+      <button id="logoutBtn" style="background:transparent; border:1px solid #333; color:#fff; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px;">Cerrar sesión</button>
+    </div>
   </div>
 
   <div class="wrap">
@@ -124,6 +126,42 @@
         <pre id="summaryText"></pre>
         <div class="actions"><button class="btn primary" id="submitBtn" disabled>Enviar Postulación</button></div>
         <div class="toast" id="toast"></div>
+      </div>
+    </div>
+
+    <!-- PANEL DE ADMINISTRADOR (MODAL) -->
+    <div id="adminModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center;">
+      <div style="background:#151518; padding:24px; border-radius:8px; width:90%; max-width:800px; max-height:90vh; overflow-y:auto; border:1px solid #333;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h2 style="margin:0; font-family:'Archivo Black', sans-serif; color:var(--gold);">Panel de Control</h2>
+          <button id="closeAdminBtn" style="background:transparent; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        
+        <h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:8px;">Crear Evento / Mérito</h3>
+        <div class="grid" style="margin-bottom:24px;">
+          <div class="field"><input type="text" id="a_evento" placeholder="Nombre (Ej. Foro Marketing)"></div>
+          <div class="field"><input type="number" id="a_vacantes" placeholder="Vacantes Totales (Ej. 5)"></div>
+          <div class="field"><input type="text" id="a_desc" placeholder="Descripción breve"></div>
+          <div class="field"><input type="text" id="a_roles" placeholder="Roles (Ej. Foto:2, Editor:3)"></div>
+          <div class="field"><input type="text" id="a_fecha" placeholder="Fecha (DD/MM/YYYY)"></div>
+          <div class="field">
+            <select id="a_tipo" style="width:100%; padding:12px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+              <option value="Evento">Evento</option>
+              <option value="Permanente">Permanente</option>
+            </select>
+          </div>
+        </div>
+        <button id="addEventBtn" class="btn primary" style="width:auto; padding:10px 20px; font-size:12px;">+ Agregar Proyecto</button>
+        
+        <h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:8px; margin-top:32px;">Proyectos Activos</h3>
+        <div id="adminEventsList" style="margin-bottom:32px;"></div>
+
+        <h3 style="color:#fff; border-bottom:1px solid #333; padding-bottom:8px;">Gestión de Administradores</h3>
+        <div style="display:flex; gap:10px; margin-bottom:16px;">
+          <input type="email" id="a_new_admin" placeholder="Correo del nuevo admin" style="flex:1; padding:10px; border-radius:4px; background:#0d0d0f; border:1px solid #333; color:#fff;">
+          <button id="addAdminBtn" class="btn primary" style="width:auto; padding:10px 20px; font-size:12px;">+ Agregar</button>
+        </div>
+        <div id="adminUsersList"></div>
       </div>
     </div>
 
